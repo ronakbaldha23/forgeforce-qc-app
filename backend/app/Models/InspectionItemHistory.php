@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class InspectionItemHistory extends Model
 {
+    protected $table = 'inspection_item_history';
+
     public $timestamps = false;
 
     protected $fillable = [
