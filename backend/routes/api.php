@@ -11,13 +11,6 @@ use App\Http\Controllers\Api\MachineController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
-// Placeholder route proving the frontend can reach the backend.
-Route::get('/ping', fn () => response()->json([
-    'status' => 'ok',
-    'message' => 'ForgeForce QC backend is reachable.',
-    'time' => now()->toIso8601String(),
-]));
-
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
