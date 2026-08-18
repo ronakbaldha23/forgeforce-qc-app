@@ -122,6 +122,17 @@ export interface InspectionSummaryDto {
   defect_count: number
 }
 
+export interface AiSuggestionDto {
+  id: number
+  inspection_id: number | null
+  suggestion_type: 'defect_summary' | 'corrective_action'
+  suggested_text: string
+  status: 'pending' | 'accepted' | 'edited' | 'rejected'
+  accepted_text: string | null
+  reviewed_by: string | null
+  created_at: string
+}
+
 export interface ApiError {
   message: string
   errors?: Record<string, string[]>

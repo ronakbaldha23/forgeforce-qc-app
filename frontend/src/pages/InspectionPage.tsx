@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { AiSummaryPanel } from '../components/ai/AiSummaryPanel'
 import { ChecklistItemCard } from '../components/checklist/ChecklistItemCard'
 import { ProgressBar } from '../components/checklist/ProgressBar'
 import { useInspection } from '../hooks/useInspection'
@@ -19,6 +20,7 @@ export function InspectionPage() {
   const answered = inspection.item_results.filter((r) => r.result !== null).length
   const total = inspection.item_results.length
   const isDraft = inspection.status === 'draft'
+  const hasFailedItems = inspection.item_results.some((r) => r.result === 'fail')
 
   async function handleSubmit() {
     setIsSubmitting(true)
@@ -94,6 +96,8 @@ export function InspectionPage() {
           </button>
         </div>
       )}
+
+      {hasFailedItems && <AiSummaryPanel inspectionId={inspection.id} />}
     </div>
   )
 }
