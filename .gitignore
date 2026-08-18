@@ -1,0 +1,19 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Environment files (repo-wide safety net; backend/ has its own too)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Node (for future frontend/)
+node_modules/
+dist/
+build/
