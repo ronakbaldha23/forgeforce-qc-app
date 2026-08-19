@@ -16,7 +16,16 @@ list of what was built, what was skipped, and judgment calls made.
 
 ### Prerequisites
 
-PHP 8.3+, Composer, Node 18+, npm.
+PHP 8.3+, Composer, Node 18+, npm — all on your shell's `PATH`.
+
+If you installed PHP via **Laragon on Windows**: Laragon only puts `php`/
+`composer` on `PATH` inside its own bundled terminal, not a regular Git
+Bash / PowerShell / VS Code terminal. If `php -v` or `composer -V` isn't
+found, either use Laragon's terminal, or add
+`C:\laragon\bin\php\php-<version>` and `C:\laragon\bin\composer` to your
+`PATH` for the session (`export PATH="/c/laragon/bin/php/php-8.3.30-...:/c/laragon/bin/composer:$PATH"`
+in Git Bash). This affects every command below, including
+`backend/test-api.sh`, which shells out to `php` for JSON parsing.
 
 ### Backend
 
