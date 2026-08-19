@@ -11,8 +11,8 @@ import { Label } from '@/components/ui/label'
 export function LoginPage() {
   const { user, login } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('engineer@forgeforce.test')
-  const [password, setPassword] = useState('password')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 

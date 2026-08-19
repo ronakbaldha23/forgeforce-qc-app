@@ -19,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
 
             return $key
                 ? new AnthropicDefectSummaryGenerator($key)
-                : new MockDefectSummaryGenerator();
+                : new MockDefectSummaryGenerator;
         });
     }
 

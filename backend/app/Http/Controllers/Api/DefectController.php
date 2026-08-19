@@ -12,7 +12,6 @@ use App\Models\Attachment;
 use App\Models\Defect;
 use App\Models\InspectionItemResult;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Storage;
 
 class DefectController extends Controller
 {
