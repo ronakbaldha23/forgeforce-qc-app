@@ -25,6 +25,24 @@ class AiSuggestionController extends Controller
     }
 
     /**
+     * The most recent defect-summary suggestion for an inspection, if one
+     * exists. Lets the frontend show a previously generated/reviewed summary
+     * when revisiting an inspection, instead of only ever showing "Generate
+     * summary" and risking a duplicate suggestion being created.
+     */
+    public function forInspection(Inspection $inspection)
+    {
+        $suggestion = AiSuggestion::where('inspection_id', $inspection->id)
+            ->where('suggestion_type', 'defect_summary')
+            ->latest()
+            ->first();
+
+        return response()->json([
+            'data' => $suggestion ? new AiSuggestionResource($suggestion) : null,
+        ]);
+    }
+
+    /**
      * Human review of an AI suggestion. This is the only way a suggestion's
      * status leaves "pending" — the AI output itself never becomes an
      * official record without this explicit action, and even then it is

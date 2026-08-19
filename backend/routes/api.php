@@ -42,5 +42,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/corrective-actions/{correctiveAction}', [CorrectiveActionController::class, 'update']);
 
     Route::post('/ai/defect-summary', [AiSuggestionController::class, 'generateDefectSummary']);
+    Route::get('/inspections/{inspection}/ai-suggestion', [AiSuggestionController::class, 'forInspection']);
     Route::patch('/ai-suggestions/{aiSuggestion}', [AiSuggestionController::class, 'update']);
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Loader2, Sparkles } from 'lucide-react'
 import { aiApi } from '../../lib/api/ai'
 import { HttpError } from '../../lib/http'
@@ -15,9 +15,25 @@ const STATUS_LABEL: Record<AiSuggestionDto['status'], string> = {
 
 export function AiSummaryPanel({ inspectionId }: { inspectionId: number }) {
   const [suggestion, setSuggestion] = useState<AiSuggestionDto | null>(null)
+  const [isCheckingExisting, setIsCheckingExisting] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [isReviewing, setIsReviewing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    aiApi
+      .getForInspection(inspectionId)
+      .then((existing) => {
+        if (!cancelled) setSuggestion(existing)
+      })
+      .finally(() => {
+        if (!cancelled) setIsCheckingExisting(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [inspectionId])
 
   async function handleGenerate() {
     setIsLoading(true)
@@ -49,7 +65,7 @@ export function AiSummaryPanel({ inspectionId }: { inspectionId: number }) {
         <h2 className="flex items-center gap-1.5 text-sm font-semibold text-indigo-900">
           <Sparkles className="size-4" /> AI-generated summary
         </h2>
-        {!suggestion && (
+        {!isCheckingExisting && !suggestion && (
           <Button
             type="button"
             onClick={handleGenerate}
@@ -67,6 +83,12 @@ export function AiSummaryPanel({ inspectionId }: { inspectionId: number }) {
         </p>
 
         {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+
+        {isCheckingExisting && (
+          <p className="mt-2 flex items-center gap-1.5 text-xs text-indigo-700">
+            <Loader2 className="size-3.5 animate-spin" /> Checking for an existing summary…
+          </p>
+        )}
 
         {suggestion && (
           <div className="mt-3">
