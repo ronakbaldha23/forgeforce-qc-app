@@ -10,7 +10,28 @@ list of what was built, what was skipped, and judgment calls made.
 ## Stack
 
 - **Backend:** Laravel 13 (PHP 8.3), Sanctum (Bearer token auth), SQLite.
-- **Frontend:** React + TypeScript (Vite), Tailwind CSS, React Router.
+- **Frontend:** React + TypeScript (Vite), Tailwind CSS, shadcn/ui (Radix +
+  class-variance-authority), React Router.
+
+## Post-Build Fix: Full-Remount-on-Save
+
+A follow-up manual test round reported "clicking Save causes a full page
+reload." It wasn't a literal browser navigation — every `<button>`/`<form>`
+in the app already had correct `type` attributes and `e.preventDefault()`
+calls (verified by audit, then by instrumenting a real browser for
+`domcontentloaded` events during a Save click: zero, both before and after
+the fix). The actual cause was architectural: `InspectionPage` held one
+`isLoading` flag, and every item save called a full `reload()` of the
+inspection, which unmounted the entire checklist behind a blank "Loading…"
+screen and remounted it from scratch — visually indistinguishable from a
+reload even though it was client-side. Fixed by having `useInspection`
+expose `updateItemResult()`/`applySubmission()` so a save patches just that
+one item (from the PUT response) with no refetch. Verified via headless
+Chromium: 0 `domcontentloaded` events across repeated Save clicks, at both
+desktop and 375px mobile width. The UI was also migrated to shadcn/ui in
+the same pass, with `cursor-pointer` added explicitly to interactive
+elements — native `<button>` does not get pointer cursor by default in any
+browser (only `<a href>` does), which was a real, separate gap.
 
 ## Setup
 
@@ -133,12 +154,18 @@ cost of only being reusable for these two fields (result + comment).
 - **Corrective actions are `hasMany` from Defect, not `hasOne`.** A defect
   can get a follow-up corrective action if the first fix doesn't hold —
   `hasOne` would silently hide a second row rather than prevent one.
-- **`php artisan serve` with `PHP_CLI_SERVER_WORKERS=4`.** Testing with a
-  real browser (not just curl) surfaced that PHP's built-in dev server is
-  single-threaded by default, which caused several-second queuing delays
-  when multiple components fetched on mount. Set in `.env.example` because
-  it's a real, reproducible finding, not a guess — irrelevant in
-  production, where you'd run php-fpm.
+- **`php artisan serve`'s single-threaded default is a known, accepted dev
+  limitation on Windows — not fixed by `PHP_CLI_SERVER_WORKERS`.** Real-browser
+  testing surfaced that concurrent requests (e.g. two components fetching on
+  mount) queue behind each other, adding a visible delay per page. I initially
+  "fixed" this by setting `PHP_CLI_SERVER_WORKERS=4`, but on re-verification
+  it turned out to be a no-op: that flag requires `pcntl_fork()`, which
+  doesn't exist on Windows (`php artisan serve` prints "forking is not
+  supported on this platform" and silently falls back to one worker
+  regardless). Left commented out in `.env.example` with that explanation
+  rather than quietly removed, since it's real on Linux/macOS dev machines.
+  Not an issue in production, where php-fpm gives true concurrency on any
+  platform.
 
 ## AI Feature
 
@@ -196,8 +223,9 @@ paste anything into a comment box.
 | 5. Frontend (auth, machine/inspection pages, checklist UI, browser-verified) | 90 min |
 | 6. AI feature (real + mock, frontend panel) | 35 min |
 | 7. README, self-review, cleanup, SUMMARY.md | 35 min |
+| Post-build. Fixed full-remount-on-save bug, migrated UI to shadcn/ui, mobile-width pass | ~90 min |
 
-Total: roughly 6 hours, run unattended (see note below).
+Total: roughly 6 hours for the original build, plus a follow-up fix/UI pass afterward.
 
 ## Intentionally Not Implemented
 
