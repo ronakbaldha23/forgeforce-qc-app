@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AiSuggestionController;
+use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CorrectiveActionController;
 use App\Http\Controllers\Api\DefectController;
@@ -35,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/defects', [DefectController::class, 'store']);
     Route::patch('/defects/{defect}', [DefectController::class, 'update']);
     Route::post('/defects/{defect}/attachments', [DefectController::class, 'storeAttachment']);
+    Route::delete('/attachments/{attachment}', [AttachmentController::class, 'destroy']);
 
     Route::post('/corrective-actions', [CorrectiveActionController::class, 'store']);
     Route::patch('/corrective-actions/{correctiveAction}', [CorrectiveActionController::class, 'update']);
