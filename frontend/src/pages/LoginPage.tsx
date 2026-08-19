@@ -1,7 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { HttpError } from '../lib/http'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export function LoginPage() {
   const { user, login } = useAuth()
@@ -28,50 +33,52 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-lg bg-white p-8 shadow">
-        <h1 className="text-xl font-semibold text-slate-900">ForgeForce QC</h1>
-        <p className="mt-1 text-sm text-slate-500">Sign in to start an inspection.</p>
+    <div className="flex min-h-screen items-center justify-center bg-muted p-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <h1 className="text-xl font-semibold text-foreground">ForgeForce QC</h1>
+          <p className="text-sm text-muted-foreground">Sign in to start an inspection.</p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-12 text-base"
+              />
+            </div>
 
-        <label className="mt-6 block text-sm font-medium text-slate-700" htmlFor="email">
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 w-full min-h-[48px] rounded-md border border-slate-300 px-3 text-base"
-        />
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-12 text-base"
+              />
+            </div>
 
-        <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="password">
-          Password
-        </label>
-        <input
-          id="password"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 w-full min-h-[48px] rounded-md border border-slate-300 px-3 text-base"
-        />
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+            <Button type="submit" disabled={isSubmitting} className="h-12 w-full text-base">
+              {isSubmitting && <Loader2 className="animate-spin" />}
+              {isSubmitting ? 'Signing in…' : 'Sign in'}
+            </Button>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="mt-6 min-h-[48px] w-full rounded-md bg-slate-900 text-base font-medium text-white disabled:opacity-50"
-        >
-          {isSubmitting ? 'Signing in…' : 'Sign in'}
-        </button>
-
-        <p className="mt-4 text-xs text-slate-400">
-          Demo accounts: engineer@forgeforce.test / manager@forgeforce.test / admin@forgeforce.test (password:{' '}
-          <code>password</code>)
-        </p>
-      </form>
+            <p className="text-xs text-muted-foreground">
+              Demo accounts: engineer@forgeforce.test / manager@forgeforce.test / admin@forgeforce.test
+              (password: <code>password</code>)
+            </p>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }

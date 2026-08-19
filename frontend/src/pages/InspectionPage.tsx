@@ -1,21 +1,31 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
 import { AiSummaryPanel } from '../components/ai/AiSummaryPanel'
 import { ChecklistItemCard } from '../components/checklist/ChecklistItemCard'
 import { ProgressBar } from '../components/checklist/ProgressBar'
 import { useInspection } from '../hooks/useInspection'
 import { inspectionsApi } from '../lib/api/inspections'
 import { HttpError } from '../lib/http'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 export function InspectionPage() {
   const { inspectionId } = useParams()
   const id = Number(inspectionId)
-  const { inspection, isLoading, error, reload } = useInspection(id)
+  const { inspection, isLoading, error, updateItemResult, applySubmission } = useInspection(id)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  if (isLoading) return <p className="text-slate-500">Loading&hellip;</p>
-  if (error || !inspection) return <p className="text-red-600">{error ?? 'Inspection not found.'}</p>
+  if (isLoading) {
+    return (
+      <p className="flex items-center gap-2 text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" /> Loading&hellip;
+      </p>
+    )
+  }
+  if (error || !inspection) return <p className="text-destructive">{error ?? 'Inspection not found.'}</p>
 
   const answered = inspection.item_results.filter((r) => r.result !== null).length
   const total = inspection.item_results.length
@@ -26,8 +36,8 @@ export function InspectionPage() {
     setIsSubmitting(true)
     setSubmitError(null)
     try {
-      await inspectionsApi.submit(id)
-      await reload()
+      const submitted = await inspectionsApi.submit(id)
+      applySubmission(submitted)
     } catch (err) {
       setSubmitError(err instanceof HttpError ? err.message : 'Could not submit inspection.')
     } finally {
@@ -37,23 +47,19 @@ export function InspectionPage() {
 
   return (
     <div>
-      <Link to={`/machines/${inspection.machine.id}`} className="text-sm text-slate-500">
+      <Link to={`/machines/${inspection.machine.id}`} className="cursor-pointer text-sm text-muted-foreground hover:underline">
         &larr; {inspection.machine.name}
       </Link>
 
-      <div className="mt-2 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-900">
-          {inspection.machine.code} inspection
-        </h1>
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
-            isDraft ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-          }`}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl font-semibold text-foreground">{inspection.machine.code} inspection</h1>
+        <Badge
+          className={cn(isDraft ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800')}
         >
           {isDraft ? 'In progress' : 'Submitted'}
-        </span>
+        </Badge>
       </div>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted-foreground">
         Inspector: {inspection.inspector} &middot; Started {new Date(inspection.started_at).toLocaleString()}
         {inspection.submitted_at && ` · Submitted ${new Date(inspection.submitted_at).toLocaleString()}`}
       </p>
@@ -78,22 +84,27 @@ export function InspectionPage() {
               key={item.id}
               item={item}
               inspectionStatus={inspection.status}
-              onSaved={() => void reload()}
+              onSaved={updateItemResult}
             />
           ))}
       </div>
 
       {isDraft && (
         <div className="mt-6">
-          {submitError && <p className="mb-2 text-sm text-red-600">{submitError}</p>}
-          <button
+          {submitError && <p className="mb-2 text-sm text-destructive">{submitError}</p>}
+          <Button
             type="button"
             onClick={handleSubmit}
             disabled={answered < total || isSubmitting}
-            className="min-h-[56px] w-full rounded-md bg-emerald-600 text-lg font-medium text-white disabled:opacity-40"
+            className="h-14 w-full bg-emerald-600 text-base hover:bg-emerald-700"
           >
-            {isSubmitting ? 'Submitting…' : answered < total ? `Answer all items to submit (${answered}/${total})` : 'Submit inspection'}
-          </button>
+            {isSubmitting && <Loader2 className="animate-spin" />}
+            {isSubmitting
+              ? 'Submitting…'
+              : answered < total
+                ? `Answer all items to submit (${answered}/${total})`
+                : 'Submit inspection'}
+          </Button>
         </div>
       )}
 

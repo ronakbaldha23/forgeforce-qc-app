@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { Button } from '@/components/ui/button'
 
 const ROLE_LABELS: Record<string, string> = {
   engineer: 'Engineer',
@@ -17,23 +18,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
-        <Link to="/" className="text-lg font-semibold text-slate-900">
+    <div className="min-h-screen bg-muted">
+      <header className="flex items-center justify-between border-b bg-background px-4 py-3 sm:px-6">
+        <Link to="/" className="text-lg font-semibold text-foreground">
           ForgeForce QC
         </Link>
         {user && (
           <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-slate-500 sm:inline">
+            <span className="hidden text-sm text-muted-foreground sm:inline">
               {user.name} &middot; {ROLE_LABELS[user.role] ?? user.role}
             </span>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="min-h-[44px] rounded-md border border-slate-300 px-4 text-sm font-medium text-slate-700 active:bg-slate-100"
-            >
+            <Button type="button" variant="outline" onClick={handleLogout} className="h-11">
               Log out
-            </button>
+            </Button>
           </div>
         )}
       </header>

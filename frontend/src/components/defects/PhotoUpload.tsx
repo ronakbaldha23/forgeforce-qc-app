@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react'
+import { Camera, Loader2 } from 'lucide-react'
 import { defectsApi } from '../../lib/api/defects'
 import { HttpError } from '../../lib/http'
 import type { AttachmentDto } from '../../types'
+import { Button } from '@/components/ui/button'
 
 export function PhotoUpload({
   defectId,
@@ -41,15 +43,11 @@ export function PhotoUpload({
           if (file) void handleFile(file)
         }}
       />
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={isUploading}
-        className="min-h-[44px] rounded-md border border-slate-300 px-4 text-sm font-medium text-slate-700 active:bg-slate-100 disabled:opacity-50"
-      >
-        {isUploading ? 'Uploading…' : '📷 Add photo'}
-      </button>
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      <Button type="button" variant="outline" onClick={() => inputRef.current?.click()} disabled={isUploading}>
+        {isUploading ? <Loader2 className="animate-spin" /> : <Camera />}
+        {isUploading ? 'Uploading…' : 'Add photo'}
+      </Button>
+      {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
     </div>
   )
 }

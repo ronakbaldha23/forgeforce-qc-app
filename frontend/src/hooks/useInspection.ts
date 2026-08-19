@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { inspectionsApi } from '../lib/api/inspections'
-import type { InspectionDto } from '../types'
+import type { InspectionDto, InspectionItemResultDto } from '../types'
 
 export function useInspection(inspectionId: number) {
   const [inspection, setInspection] = useState<InspectionDto | null>(null)
@@ -23,5 +23,23 @@ export function useInspection(inspectionId: number) {
     reload()
   }, [reload])
 
-  return { inspection, isLoading, error, reload }
+  /**
+   * Patch a single item result in place (e.g. after saving a checklist
+   * item) without refetching or re-showing the loading state — avoids
+   * unmounting the whole checklist on every save.
+   */
+  const updateItemResult = useCallback((updated: InspectionItemResultDto) => {
+    setInspection((prev) =>
+      prev
+        ? { ...prev, item_results: prev.item_results.map((r) => (r.id === updated.id ? updated : r)) }
+        : prev,
+    )
+  }, [])
+
+  /** Apply the response from submitting the inspection directly, no refetch. */
+  const applySubmission = useCallback((data: InspectionDto) => {
+    setInspection(data)
+  }, [])
+
+  return { inspection, isLoading, error, reload, updateItemResult, applySubmission }
 }

@@ -20,21 +20,14 @@ class InspectionController extends Controller
 
         $inspection = $this->inspections->start($machine, $request->user());
 
-        $inspection->load(['machine', 'inspector', 'itemResults.templateItem', 'itemResults.defects']);
+        $inspection->load($this->detailRelations());
 
         return (new InspectionResource($inspection))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     public function show(Inspection $inspection)
     {
-        $inspection->load([
-            'machine',
-            'inspector',
-            'itemResults.templateItem',
-            'itemResults.history',
-            'itemResults.defects.attachments',
-            'itemResults.defects.correctiveActions.assignee',
-        ]);
+        $inspection->load($this->detailRelations());
 
         return new InspectionResource($inspection);
     }
@@ -45,8 +38,22 @@ class InspectionController extends Controller
 
         $inspection = $this->inspections->submit($inspection);
 
-        $inspection->load(['machine', 'inspector', 'itemResults.templateItem', 'itemResults.defects']);
+        $inspection->load($this->detailRelations());
 
         return new InspectionResource($inspection);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function detailRelations(): array
+    {
+        return [
+            'machine',
+            'inspector',
+            'itemResults.templateItem',
+            'itemResults.defects.attachments',
+            'itemResults.defects.correctiveActions.assignee',
+        ];
     }
 }

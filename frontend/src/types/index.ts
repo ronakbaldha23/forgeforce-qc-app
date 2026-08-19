@@ -85,7 +85,6 @@ export interface InspectionItemResultDto {
   comment: string | null
   updated_by: string | null
   updated_at: string
-  has_history?: boolean
   defects: DefectDto[]
 }
 

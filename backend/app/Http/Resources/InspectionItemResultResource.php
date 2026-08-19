@@ -22,10 +22,6 @@ class InspectionItemResultResource extends JsonResource
             'comment' => $this->comment,
             'updated_by' => $this->updatedBy?->name,
             'updated_at' => $this->updated_at,
-            'has_history' => $this->when(
-                $this->relationLoaded('history'),
-                fn () => $this->history->count() > 1,
-            ),
             'defects' => DefectResource::collection($this->whenLoaded('defects')),
         ];
     }

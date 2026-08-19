@@ -1,8 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { Loader2 } from 'lucide-react'
 import { correctiveActionsApi } from '../../lib/api/correctiveActions'
 import { usersApi } from '../../lib/api/users'
 import { HttpError } from '../../lib/http'
 import type { CorrectiveActionDto, User } from '../../types'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 export function CorrectiveActionForm({
   defectId,
@@ -44,20 +48,20 @@ export function CorrectiveActionForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-2 flex flex-col gap-2 rounded-md border border-slate-200 p-3">
-      <label className="text-xs font-medium text-slate-600">Corrective action</label>
-      <textarea
+    <form onSubmit={handleSubmit} className="mt-2 flex flex-col gap-2 rounded-md border p-3">
+      <label className="text-xs font-medium text-muted-foreground">Corrective action</label>
+      <Textarea
         required
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         placeholder="What needs to be done to fix this?"
-        className="min-h-[64px] rounded-md border border-slate-300 p-2 text-sm"
+        className="min-h-16 bg-background"
       />
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <select
           value={assignedTo}
           onChange={(e) => setAssignedTo(e.target.value)}
-          className="min-h-[44px] flex-1 rounded-md border border-slate-300 px-2 text-sm"
+          className="h-11 flex-1 cursor-pointer rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <option value="">Assign to&hellip;</option>
           {users.map((u) => (
@@ -66,29 +70,17 @@ export function CorrectiveActionForm({
             </option>
           ))}
         </select>
-        <input
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          className="min-h-[44px] rounded-md border border-slate-300 px-2 text-sm"
-        />
+        <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="h-11 sm:w-auto" />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="min-h-[44px] flex-1 rounded-md bg-slate-900 text-sm font-medium text-white disabled:opacity-50"
-        >
+        <Button type="submit" disabled={isSubmitting} className="h-11 flex-1">
+          {isSubmitting && <Loader2 className="animate-spin" />}
           Save corrective action
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="min-h-[44px] rounded-md border border-slate-300 px-4 text-sm text-slate-600"
-        >
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel} className="h-11">
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   )

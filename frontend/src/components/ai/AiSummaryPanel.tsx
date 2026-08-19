@@ -1,7 +1,10 @@
 import { useState } from 'react'
+import { Loader2, Sparkles } from 'lucide-react'
 import { aiApi } from '../../lib/api/ai'
 import { HttpError } from '../../lib/http'
 import type { AiSuggestionDto } from '../../types'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
 const STATUS_LABEL: Record<AiSuggestionDto['status'], string> = {
   pending: 'Awaiting review',
@@ -13,6 +16,7 @@ const STATUS_LABEL: Record<AiSuggestionDto['status'], string> = {
 export function AiSummaryPanel({ inspectionId }: { inspectionId: number }) {
   const [suggestion, setSuggestion] = useState<AiSuggestionDto | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isReviewing, setIsReviewing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleGenerate() {
@@ -30,57 +34,71 @@ export function AiSummaryPanel({ inspectionId }: { inspectionId: number }) {
 
   async function handleReview(status: 'accepted' | 'rejected') {
     if (!suggestion) return
-    const updated = await aiApi.review(suggestion.id, status)
-    setSuggestion(updated)
+    setIsReviewing(true)
+    try {
+      const updated = await aiApi.review(suggestion.id, status)
+      setSuggestion(updated)
+    } finally {
+      setIsReviewing(false)
+    }
   }
 
   return (
-    <div className="mt-6 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-indigo-900">AI-generated summary</h2>
+    <Card className="mt-6 border-indigo-200 bg-indigo-50">
+      <CardHeader className="flex-row items-center justify-between p-4 pb-0">
+        <h2 className="flex items-center gap-1.5 text-sm font-semibold text-indigo-900">
+          <Sparkles className="size-4" /> AI-generated summary
+        </h2>
         {!suggestion && (
-          <button
+          <Button
             type="button"
             onClick={handleGenerate}
             disabled={isLoading}
-            className="min-h-[40px] rounded-md bg-indigo-600 px-3 text-sm font-medium text-white disabled:opacity-50"
+            className="h-10 bg-indigo-600 hover:bg-indigo-700"
           >
+            {isLoading && <Loader2 className="animate-spin" />}
             {isLoading ? 'Generating…' : 'Generate summary'}
-          </button>
+          </Button>
         )}
-      </div>
-      <p className="mt-1 text-xs text-indigo-700">
-        For review only — not an official QC record until a reviewer explicitly accepts it below.
-      </p>
+      </CardHeader>
+      <CardContent className="p-4">
+        <p className="text-xs text-indigo-700">
+          For review only — not an official QC record until a reviewer explicitly accepts it below.
+        </p>
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
 
-      {suggestion && (
-        <div className="mt-3">
-          <pre className="whitespace-pre-wrap rounded-md bg-white p-3 text-sm text-slate-800">
-            {suggestion.suggested_text}
-          </pre>
-          <p className="mt-2 text-xs font-medium text-indigo-700">{STATUS_LABEL[suggestion.status]}</p>
-          {suggestion.status === 'pending' && (
-            <div className="mt-2 flex gap-2">
-              <button
-                type="button"
-                onClick={() => handleReview('accepted')}
-                className="min-h-[40px] flex-1 rounded-md bg-emerald-600 text-sm font-medium text-white"
-              >
-                Accept
-              </button>
-              <button
-                type="button"
-                onClick={() => handleReview('rejected')}
-                className="min-h-[40px] flex-1 rounded-md border border-slate-300 text-sm text-slate-600"
-              >
-                Reject
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+        {suggestion && (
+          <div className="mt-3">
+            <pre className="whitespace-pre-wrap rounded-md bg-background p-3 text-sm text-foreground">
+              {suggestion.suggested_text}
+            </pre>
+            <p className="mt-2 text-xs font-medium text-indigo-700">{STATUS_LABEL[suggestion.status]}</p>
+            {suggestion.status === 'pending' && (
+              <div className="mt-2 flex gap-2">
+                <Button
+                  type="button"
+                  onClick={() => handleReview('accepted')}
+                  disabled={isReviewing}
+                  className="h-10 flex-1 bg-emerald-600 hover:bg-emerald-700"
+                >
+                  {isReviewing && <Loader2 className="animate-spin" />}
+                  Accept
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleReview('rejected')}
+                  disabled={isReviewing}
+                  className="h-10 flex-1"
+                >
+                  Reject
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
