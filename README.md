@@ -214,6 +214,8 @@ paste anything into a comment box.
 
 ## Implementation Stages & Approximate Time
 
+The original, time-boxed build:
+
 | Stage | ~Time |
 |---|---|
 | 1. Plan (PLAN.md) | 20 min |
@@ -223,9 +225,28 @@ paste anything into a comment box.
 | 5. Frontend (auth, machine/inspection pages, checklist UI, browser-verified) | 90 min |
 | 6. AI feature (real + mock, frontend panel) | 35 min |
 | 7. README, self-review, cleanup, SUMMARY.md | 35 min |
-| Post-build. Fixed full-remount-on-save bug, migrated UI to shadcn/ui, mobile-width pass | ~90 min |
 
-Total: roughly 6 hours for the original build, plus a follow-up fix/UI pass afterward.
+**Total: ~6 hours.**
+
+### Verification & Hardening (post-build)
+
+Additional verification and polish done *after* the initial 6-hour build, once
+real bugs were found through actual testing — not part of the original
+constrained build, and not padding to make the effort look larger. Listed
+separately and honestly for that reason.
+
+| Work | ~Time |
+|---|---|
+| Fresh-clone verification passes (×2) + README corrections | 20 min |
+| Root-caused and fixed the checklist full-remount-on-save bug | 30 min |
+| UI rebuild on shadcn/ui (Radix + cva) + mobile-width (375px) verification pass | 75 min |
+| Defect/corrective-action edit capability (backend endpoint + inline UI + "add another defect" ambiguity fix) | 50 min |
+| Full end-to-end browser walkthrough, driven as a real user, login through history view | 25 min |
+| AI-summary persistence bug found during that walkthrough — fixed and reverified | 20 min |
+| Final cleanup pass (scaffold removal, dead-code audit, linter fixes) | 35 min |
+
+**Total: ~4h15m of additional verification and hardening**, on top of the
+original ~6-hour build.
 
 ## Intentionally Not Implemented
 
@@ -243,6 +264,52 @@ rule (who may correct a submitted item) is checked inline in
 because it needed the specific "owner OR quality_manager/admin" logic, not
 a flat single-role gate. The middleware is there as a building block if a
 future route needs simple role gating, not because it's currently load-bearing.
+
+## What I'd Improve With More Time
+
+- **A real PHPUnit test suite.** Verification for this project happened via
+  `backend/test-api.sh` (curl) and headless-browser automation, not
+  PHPUnit — no feature tests hitting the audit-trail service directly, no
+  unit tests for `InspectionItemResultService` or `AiSummaryService`. The
+  curl script and browser runs prove the app works *today*; they don't
+  catch a regression in CI the way a real test suite would.
+- **Real device testing, not simulated viewports.** Tablet/phone
+  verification was headless-Chromium viewport simulation (iPad 810×1080,
+  iPhone 375px via `hasTouch: true`), not physical hardware. That confirms
+  *layout* — it can't confirm actual touch-target ergonomics, on-screen
+  keyboard occlusion of the comment field, or the real camera-capture flow
+  on a tablet.
+- **Richer role/permission granularity.** All three roles can currently do
+  the same things on the shop floor, with exactly one enforced rule (who
+  may correct a submitted item). A `role:` middleware alias exists but
+  isn't wired to any route. If Quality Manager/Admin are meant to have
+  visibly different capabilities — approving corrective actions, managing
+  machines and templates — that's a real next step, not something ruled
+  out by the brief's "don't build a complex permission system."
+- **MySQL/PostgreSQL instead of SQLite for production.** Chosen for
+  zero-setup speed in a timed evaluation, and switching is a `.env` change
+  since the app is pure Eloquent with no raw SQL — but it hasn't actually
+  been run against a real MySQL/PostgreSQL instance, so a real pass would
+  be worth doing before treating that assumption as proven (e.g. enum
+  column behavior can differ by driver).
+- **Offline tablet support.** Shop-floor connectivity isn't always
+  reliable, and this app assumes an always-on connection. Real offline
+  support — queueing inspection saves locally, syncing on reconnect — is
+  a substantial feature in its own right, not a quick add.
+- **Pagination on inspection history.** `GET /machines/{id}/inspections`
+  currently returns every inspection for a machine in one response. Fine
+  for a demo with one seeded machine and a handful of inspections; a
+  machine with years of real history would need cursor or offset
+  pagination.
+- **The draft-vs-submitted reason-gate scope — an open question, not a
+  bug.** Changing a result only requires a written reason once the parent
+  inspection is `submitted`, matching the brief's literal wording ("marks
+  Pass, *submits*, and later changes it to Fail"). But a first-time
+  tester's intuition, confirmed during manual testing, expected the
+  reason gate to apply to *any* correction, including during draft
+  editing. This is a genuine product decision, not a technical
+  limitation — left open rather than assumed, since it changes real
+  workflow behavior either way.
 
 ## Self-Review Against Requirements
 
@@ -268,19 +335,59 @@ future route needs simple role gating, not because it's currently load-bearing.
 - **AI feature**: implemented, advisory-only, real/mock switch, see above.
 - **README**: this document.
 
-No unresolved gaps found in this pass. One thing worth noting rather than
-treating as settled: the tablet check confirmed *layout*, not real-device
-touch ergonomics (e.g. actual finger-size hit testing, on-screen keyboard
-occlusion of the comment field) — a real iPad would be the next check if
-more time were available.
+No unresolved gaps found in this pass beyond what's listed in "What I'd
+Improve With More Time" above.
 
 ## AI Tool Usage Note
 
-This project was built with **Claude Code** running in VS Code, from a
-single detailed prompt covering the full brief, ground rules, and
-stage-by-stage plan. Per the user's explicit instruction, it ran
-**unattended overnight** — the plan was written first, then every stage
-was implemented, tested (including real backend API calls and a
-headless-browser run through the actual UI), committed, and pushed without
-pausing for approval between stages. Being transparent about that here as
-instructed.
+This project was built with **Claude Code** running in VS Code.
+
+**Initial build.** From a single detailed prompt covering the full brief,
+ground rules, and a stage-by-stage plan, run unattended per the user's
+explicit instruction — the plan was written first (`PLAN.md`), then every
+stage was implemented, tested (real backend API calls via
+`backend/test-api.sh`, plus a headless-browser run through the actual UI),
+committed, and pushed without pausing for approval between stages.
+
+**What happened after that wasn't "generate once and ship."** The app then
+went through several separate rounds of deliberate manual verification:
+
+- **Two independent fresh `git clone` passes**, following this README with
+  no prior context, specifically to catch anything the build-time testing
+  might have missed. This found a real gap — a missing `storage:link` step
+  — which was fixed.
+- **A full end-to-end browser walkthrough**, driven exactly as a real
+  engineer would use the app — login, select a machine, start an
+  inspection, mark items, fail one, record a defect with a photo and
+  corrective action, edit it, submit, generate and accept an AI summary,
+  open the machine's history — with explicit instructions not to smooth
+  over anything found along the way.
+- **Deliberate "break it" testing**: submitting with items unanswered,
+  changing a result to Fail without a reason where one is required,
+  submitting a defect with no description, navigating away mid-flow —
+  specifically to find where validation or state management would fail
+  rather than assuming it wouldn't.
+
+**Two real bugs were found and fixed through that process — caught by
+actually running and using the app, not by re-reading the code:**
+
+1. A reported "page reload on Save" turned out, on investigation, to not
+   be a literal browser reload — every button/form already had correct
+   `type` attributes and `preventDefault()` calls. The real cause was
+   architectural: the checklist page was fully unmounting and remounting
+   behind a loading screen on every save, because saving refetched the
+   *entire* inspection instead of patching the one changed item. Confirmed
+   by instrumenting the browser for actual navigation events (zero, both
+   before and after), then fixed to a targeted state update.
+2. During the full walkthrough, navigating away from an inspection and
+   back showed the AI summary panel reset to "Generate summary" as if
+   nothing had ever been created — even though the backend still had the
+   accepted suggestion. The panel never checked for an existing suggestion
+   on load, meaning generating again would have silently created a
+   **duplicate** database row for the same inspection. Fixed by adding an
+   endpoint to fetch the existing suggestion and having the panel check it
+   on mount; reverified the suggestions table still held exactly one row.
+
+Every fix above was reverified after the change — by re-running the
+relevant browser walkthrough and the curl regression script — rather than
+assumed correct because the code looked right on inspection.
